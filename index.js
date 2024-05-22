@@ -20,7 +20,7 @@ app.get('/api/flavors', async (req, res, next) => {
 app.get('/api/flavors/:id', async (req, res, next) => {
     try {
         const SQL = 'SELECT * FROM flavors WHERE id=$1';
-        const response = await client.query(SQL)
+        const response = await client.query(SQL, [req.params.id])
         res.send(response.rows);
     } catch (error) {
         next(error);
@@ -29,8 +29,8 @@ app.get('/api/flavors/:id', async (req, res, next) => {
 
 app.post('/api/flavors', async (req, res, next) => {
     try {
-        const SQL = 'INSERT INTO flavors(name, description, favorite) VALUES($1, $2, $3) RETURNING *';
-        const response = await client.query(SQL, [req.body.name, req.body.description, req.body.favorite]);
+        const SQL = 'INSERT INTO flavors(name, description, is_favorite) VALUES($1, $2, $3) RETURNING *';
+        const response = await client.query(SQL, [req.body.name, req.body.description, req.body.is_favorite]);
         res.send(response.rows[0]);
     } catch (error) {
         next(error);
@@ -49,7 +49,7 @@ app.delete('/api/flavors/:id', async (req, res, next) => {
 
 app.put('/api/flavors/:id', async (req, res, next) => {
     try {
-        const SQL = 'UPDATE flavors SET name=$1, description=$2, favorite=$3 WHERE id=$4 RETURNING *';
+        const SQL = 'UPDATE flavors SET name=$1, description=$2, is_favorite=$3 WHERE id=$4 RETURNING *';
         const response = await client.query(SQL, [req.body.name, req.body.description, req.body.favorite, req.params.id]);
         res.send(response.rows[0]);
     } catch (error) {
@@ -68,21 +68,24 @@ const init = async () => {
         id SERIAL PRIMARY KEY,
         name VARCHAR(255) NOT NULL,
         description VARCHAR(255) NOT NULL,
-        favorite BOOLEAN DEFAULT false,
+        is_favorite BOOLEAN DEFAULT false,
         created_at TIMESTAMP DEFAULT now(),
-        updated_at TIMESTAMP DEFAULT now(),
+        updated_at TIMESTAMP DEFAULT now()
     );
     `;
     await client.query(SQL);
     console.log('tables created');
 
     SQL = `
-        INSERT INTO flavors (name, description, favorite) VALUES ('Vanilla', 'Made with real vanilla beans', true);
-        INSERT INTO flavors (name, description, favorite) VALUES ('Chocolate', 'Made with real cocoa beans', false);    
-        INSERT INTO flavors (name, description, favorite) VALUES ('Strawberry', 'Made with real strawberries beans', false);  
+        INSERT INTO flavors (name, description, is_favorite) VALUES ('Vanilla', 'Made with real vanilla beans', true);
+        INSERT INTO flavors (name, description, is_favorite) VALUES ('Chocolate', 'Made with real cocoa beans', false);    
+        INSERT INTO flavors (name, description, is_favorite) VALUES ('Strawberry', 'Made with real strawberries beans', false);  
     `;
     await client.query(SQL);
     console.log('data seeded');
+    const port = process.env.PORT || 3000
+    app.listen(port, () =>
+        console.log(`listening on port ${port}`))
 };
 
 init();
